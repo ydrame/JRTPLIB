@@ -132,6 +132,7 @@ int main(void)
 #ifndef RTP_SUPPORT_THREAD
 		status = sess.Poll();
 		checkerror(status);
+df
 #endif // RTP_SUPPORT_THREAD
 		
 		RTPTime::Wait(RTPTime(1,0));

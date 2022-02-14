@@ -1,4 +1,4 @@
-add_definitions(-DJRTPLIB_COMPILING)
+add_definitions(-DJRTPLIB_COMPILING -DRTP_SUPPORT_THREAD)
 
 set (HEADERS
 	rtcpapppacket.h

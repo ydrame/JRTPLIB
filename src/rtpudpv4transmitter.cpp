@@ -50,6 +50,17 @@
 
 #include "rtpdebug.h"
 
+uint32_t g_nvex_current_target_ip;
+uint16_t g_nvex_current_target_port;
+bool g_nvex_filtering_enabled = false;
+
+void nvex_set_target_addr(uint32_t ip, uint16_t port) {
+	// printf("@@@@@@@@@@@@@@@ Target addr set\n");
+	g_nvex_current_target_ip = ip;
+	g_nvex_current_target_port = port;
+	g_nvex_filtering_enabled = true;
+}
+
 #define RTPUDPV4TRANS_MAXPACKSIZE							65535
 #define RTPUDPV4TRANS_IFREQBUFSIZE							8192
 
@@ -919,10 +930,28 @@ int RTPUDPv4Transmitter::SendRTPData(const void *data,size_t len)
 		return ERR_RTP_UDPV4TRANS_SPECIFIEDSIZETOOBIG;
 	}
 	
+	// printf("g_nvex_filtering_enabled: %d\n", g_nvex_filtering_enabled);
 	destinations.GotoFirstElement();
 	while (destinations.HasCurrentElement())
 	{
-		sendto(rtpsock,(const char *)data,len,0,(const struct sockaddr *)destinations.GetCurrentElement().GetRTPSockAddr(),sizeof(struct sockaddr_in));
+		if (g_nvex_filtering_enabled) {
+			// filter: nv
+			auto ip = destinations.GetCurrentElement().GetIP();
+			auto port_nbo = destinations.GetCurrentElement().GetRTPPort_NBO();
+			// printf("(Current) ip: %x port: %d (Target) ip: %x port: %d\n", ip, port_nbo, g_nvex_current_target_ip, htons(g_nvex_current_target_port));
+			if (ip == g_nvex_current_target_ip && port_nbo == htons(g_nvex_current_target_port)) {
+				// printf("pkt Sent\n");
+				sendto(rtpsock, (const char*)data, len, 0, (const struct sockaddr*)destinations.GetCurrentElement().GetRTPSockAddr(), sizeof(struct sockaddr_in));
+				break;
+			}
+			else {
+				// printf("pkt filtered\n");
+			}
+		}
+		else {
+			// default library multisend behavior
+			sendto(rtpsock, (const char*)data, len, 0, (const struct sockaddr*)destinations.GetCurrentElement().GetRTPSockAddr(), sizeof(struct sockaddr_in));
+		}
 		destinations.GotoNextElement();
 	}
 	

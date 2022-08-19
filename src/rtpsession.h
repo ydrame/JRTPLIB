@@ -49,11 +49,43 @@
 #include "rtptimeutilities.h"
 #include "rtcpcompoundpacketbuilder.h"
 #include "rtpmemoryobject.h"
+
+#include <chrono>
 #include <list>
+#include <vector>
 
 #ifdef RTP_SUPPORT_THREAD
 	#include <jthread/jmutex.h>	
 #endif // RTP_SUPPORT_THREAD
+
+#ifdef __GNUC__
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+using ssrc_t = uint32_t;
+
+PACK(struct pktheader_t {
+    uint16_t version = 1;
+   	uint32_t hdr_sz = 0;
+   	int64_t timestamp = 0;
+    uint8_t encoded = 0;
+    // when set, server will echo the packet without any additional processing
+    uint8_t echo = 0;
+    ssrc_t my_ssrc = 0;
+});
+
+struct timestampsStructure{
+       uint64_t t0Id = 0;
+       uint64_t t0encode = 0;
+       uint64_t t0memcpy = 0;
+       uint64_t t0buildPacket = 0;
+       uint64_t t0dispatch = 0;
+       uint64_t t1receive = 0;
+       uint64_t t1reorder = 0;
+       uint64_t t1decode = 0;
+       uint64_t t1extractpacket;
+       uint64_t t1latency = 0;
+       uint32_t ssrc = 0;
+};
 
 namespace jrtplib
 {
@@ -451,10 +483,23 @@ public:
 	/** Sets the SDES note item for the local participant to the value \c s with length \c len. */
 	int SetLocalNote(const void *s,size_t len);
 
+	bool findtimestampstructure(uint64_t t0Id, timestampsStructure** obj);
+	static int64_t get_current_epoch_ms() {
+		auto epoch = std::chrono::high_resolution_clock::now().time_since_epoch();
+		return std::chrono::duration_cast<std::chrono::milliseconds>(epoch).count();
+	}
+	static int64_t get_current_epoch_us() {
+		auto epoch = std::chrono::high_resolution_clock::now().time_since_epoch();
+		return std::chrono::duration_cast<std::chrono::microseconds>(epoch).count();
+	}
+
 #ifdef RTPDEBUG
 	void DumpSources();
 	void DumpTransmitter();
 #endif // RTPDEBUG
+
+std::vector<timestampsStructure*> timestampstrucvec;
+
 protected:
 	/** Allocate a user defined transmitter.
 	 *  In case you specified in the Create function that you want to use a

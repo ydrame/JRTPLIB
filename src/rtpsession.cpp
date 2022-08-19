@@ -57,9 +57,9 @@
 	#include <winbase.h>
 #endif // WIN32
 
-#ifdef RTPDEBUG
+//#ifdef RTPDEBUG
 	#include <iostream>
-#endif // RTPDEBUG
+//#endif // RTPDEBUG
 
 #include "rtpdebug.h"
 
@@ -593,6 +593,7 @@ void RTPSession::LeaveAllMulticastGroups()
 	rtptrans->LeaveAllMulticastGroups();
 }
 
+bool second = false;
 int RTPSession::SendPacket(const void *data,size_t len)
 {
 	int status;
@@ -606,6 +607,24 @@ int RTPSession::SendPacket(const void *data,size_t len)
 		BUILDER_UNLOCK
 		return status;
 	}
+
+	timestampsStructure *obj = nullptr;
+	if (!second)
+	{
+		uint64_t t0buildpacket = get_current_epoch_ms();
+
+		pktheader_t *pktheader_peek = (pktheader_t *)data;
+		if (!findtimestampstructure(pktheader_peek->timestamp, &obj))
+		{
+			obj = new timestampsStructure();
+			timestampstrucvec.push_back(obj);
+			obj->t0Id = pktheader_peek->timestamp;
+		}
+		obj->t0buildPacket = t0buildpacket;
+		second = true;
+		std::cout << " 2 XXXXXXXXXXXXXXXXXXBUILDPACKET" << obj->t0buildPacket << "\n";
+	}
+
 	if ((status = SendRTPData(packetbuilder.GetPacket(),packetbuilder.GetPacketLength())) < 0)
 	{
 		BUILDER_UNLOCK
@@ -636,11 +655,33 @@ int RTPSession::SendPacket(const void *data,size_t len,
 		BUILDER_UNLOCK
 		return status;
 	}
+
+	timestampsStructure *obj = nullptr;
+
+		uint64_t t0buildpacket = get_current_epoch_us();
+
+		pktheader_t *pktheader_peek = (pktheader_t *)data;
+		if (!findtimestampstructure(pktheader_peek->timestamp, &obj))
+		{
+			obj = new timestampsStructure();
+			timestampstrucvec.push_back(obj);
+			obj->t0Id = pktheader_peek->timestamp;
+		}
+		obj->t0buildPacket = t0buildpacket;
+
 	if ((status = SendRTPData(packetbuilder.GetPacket(),packetbuilder.GetPacketLength())) < 0)
 	{
 		BUILDER_UNLOCK
 		return status;
 	}
+
+
+		uint64_t t0dispatch = get_current_epoch_us();
+
+		obj->t0dispatch = t0dispatch;
+		second = true;
+		std::cout << " 3 XXXXXXXXXXXXXXXXXX DISPATCH PACKET" << obj->t0dispatch << "\n";
+
 	BUILDER_UNLOCK
 	
 	SOURCES_LOCK
@@ -1700,6 +1741,19 @@ int RTPSession::SendRTCPData(const void *data, size_t len)
 	}
 
 	return status;
+}
+
+bool RTPSession::findtimestampstructure(/*uint32_t ssrc, */uint64_t t0Id, timestampsStructure** obj)
+{
+       for(timestampsStructure* i : timestampstrucvec)
+       {
+               if(/*i.ssrc == ssrc && */i->t0Id == t0Id)
+               {
+                       return (*obj = i);
+                       //return true;
+               }
+       }
+       return false;
 }
 
 #ifdef RTPDEBUG

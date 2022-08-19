@@ -108,9 +108,10 @@ if (NOT JRTPLIB_WINSOCK)
 	set (HEADERS ${HEADERS} extratransmitters/rtpfaketransmitter.h )
 endif ()
 
-if (MSVC)
-	set(CMAKE_DEBUG_POSTFIX _d)
-endif ()
+#if (MSVC)
+#	set(CMAKE_DEBUG_POSTFIX _d)
+#endif ()
+
 
 # Enable extra compiler warnings and mark warnings as errors: -Wall -Wextra -Werror
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)

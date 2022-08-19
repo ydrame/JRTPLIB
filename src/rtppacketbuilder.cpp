@@ -39,6 +39,7 @@
 #ifdef RTPDEBUG
 	#include <iostream>
 #endif // RTPDEBUG
+#include <iostream>
 
 #include "rtpdebug.h"
 
@@ -245,6 +246,7 @@ int RTPPacketBuilder::PrivateBuildPacket(const void *data,size_t len,
 
 	if (status < 0)
 		return status;
+	std::cout << "Length Aylao " << len << " packet length " << packetlength << std::endl;
 	packetlength = p.GetPacketLength();
 
 	if (numpackets == 0) // first packet

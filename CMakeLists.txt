@@ -3,6 +3,7 @@ if (POLICY CMP0042)
 	cmake_policy(SET CMP0042 NEW)
 endif()
 
+
 project(jrtplib)
 set(VERSION_MAJOR 3)
 set(VERSION_MINOR 11)
@@ -254,5 +255,8 @@ if (NOT MSVC)
 	configure_file(${PROJECT_SOURCE_DIR}/pkgconfig/jrtplib.pc.in ${PROJECT_BINARY_DIR}/pkgconfig/jrtplib.pc)
 	install(FILES ${PROJECT_BINARY_DIR}/pkgconfig/jrtplib.pc DESTINATION ${LIBRARY_INSTALL_DIR}/pkgconfig)
 endif ()
+
+SET(CMAKE_CXX_FLAGS_DEBUG "-O0")
+SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 
